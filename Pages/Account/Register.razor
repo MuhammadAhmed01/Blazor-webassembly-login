@@ -24,9 +24,29 @@
                 <ValidationMessage For="@(() => model.Username)" />
             </div>
             <div class="form-group">
+                <label>Country</label>
+                <InputSelect @bind-Value="model.Country" class="form-control">
+                    <option value="Other"></option>
+                    <option value="Islamic Republic of Pakistan">Pakistan</option>
+                    <option value="Federative Republic of Brazil">Brazil</option>
+                    <option value="United States of America">USA</option>
+                    <option value="The Russian Federation">Russia</option>
+                    <option value="People's Republic of China">China</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => model.Country)" />
+            </div>
+            <div class="form-group">
                 <label>Password</label>
                 <InputText @bind-Value="model.Password" type="password" class="form-control" />
                 <ValidationMessage For="@(() => model.Password)" />
+            </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <InputText @bind-Value="model.ConfirmPassword" type="password" class="form-control" />
+                @if (!string.IsNullOrEmpty(model.ConfirmPassword) && model.ConfirmPassword != model.Password)
+                {
+                    <p class="text-danger">Passwords do not match</p>
+                }
             </div>
             <button disabled="@loading" class="btn btn-primary">
                 @if (loading) 
@@ -35,6 +55,13 @@
                 }
                 Register
             </button>
+            @*<button @attributes="GetButtonAttributes()" class="btn btn-primary">
+                @if (loading) 
+                {
+                    <span class="spinner-border spinner-border-sm mr-1"></span>
+                }
+                Register
+            </button>*@
             <NavLink href="account/login" class="btn btn-link">Cancel</NavLink>
         </EditForm>
     </div>
@@ -44,7 +71,21 @@
     private AddUser model = new AddUser();
     private bool loading;
 
-    private async void OnValidSubmit()
+    @*private bool PasswordsMatch = !string.IsNullOrEmpty(model.ConfirmPassword) && model.ConfirmPassword != model.Password;*@
+
+    @*private Dictionary<string, object> GetButtonAttributes()
+    {
+        var attributes = new Dictionary<string, object>
+        {
+            { "disabled", loading || !PasswordsMatch }
+        };
+
+        return attributes;
+    }*@
+
+    @*private async void OnValidSubmit()*@
+
+    private async Task OnValidSubmit()
     {
         // reset alerts on submit
         AlertService.Clear();
@@ -52,15 +93,27 @@
         loading = true;
         try
         {
+            @*if (!PasswordsMatch)*@
+            if (!string.IsNullOrEmpty(model.ConfirmPassword) && model.ConfirmPassword != model.Password)
+            {
+                throw new Exception("Passwords do not match");
+            }
+
+            // Ensure the form submission waits for the validation process
+            // and the registration process completes before continuing.
             await AccountService.Register(model);
+
             AlertService.Success("Registration successful", keepAfterRouteChange: true);
             NavigationManager.NavigateTo("account/login");
         }
         catch (Exception ex)
         {
             AlertService.Error(ex.Message);
+        }
+        finally
+        {   
             loading = false;
-            StateHasChanged();
+            StateHasChanged(); // Trigger a re-render after updating the state
         }
     }
 }
